@@ -29,6 +29,9 @@ public class CreateAccountTest {
 
         System.out.println("=== STEP 4: DELETE ACCOUNT ===");
         deleteUser();
+
+        System.out.println("===STEP 5: RECHECK ACCOUNT===");
+        checkAccountPresence();
     }
 
     public void createAccount() {
@@ -90,6 +93,8 @@ public class CreateAccountTest {
         //executam requestul
         Response response = requestSpecification.get("Account/v1/User"+userID);
 
+        System.out.println(response.getStatusLine());
+
         if(response.getStatusLine().contains("200")) {
             Assert.assertTrue(response.getStatusLine().contains("200"));
             Assert.assertTrue(response.getStatusLine().contains("OK"));
@@ -101,20 +106,19 @@ public class CreateAccountTest {
     }
 
     public void deleteUser() {
-        //configuram clientul
+
+        // configuram clientul
         RequestSpecification requestSpecification = RestAssured.given();
-        requestSpecification.baseUri("https://demoqa.com/");
+        requestSpecification.baseUri("https://demoqa.com");
         requestSpecification.contentType("application/json");
 
-        //ne autorizam pe baza la token
-        requestSpecification.header("Authorization", "Bearer "+token);
+        // ne autorizam pe baza la token
+        requestSpecification.header("Authorization","Bearer " + token);
 
-        //executam requestul
-        Response response = requestSpecification.delete("Account/v1/User"+userID);
-
+        // executam request-ul
+        Response response = requestSpecification.delete("/Account/v1/User/" + userID);
         System.out.println(response.getStatusLine());
 
-        //validam response
         Assert.assertTrue(response.getStatusLine().contains("204"));
         Assert.assertTrue(response.getStatusLine().contains("No Content"));
 
