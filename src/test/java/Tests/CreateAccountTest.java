@@ -1,11 +1,10 @@
 package Tests;
 
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 import objectData.RequestAccount;
 import objectData.ResponseAccountSuccess;
 import objectData.response.ResponseTokenSuccess;
+import objectData.restClient.RestClient;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import propertiesUtilitty.PropertiesUtilitty;
@@ -15,6 +14,7 @@ public class CreateAccountTest {
     public RequestAccount requestAccountBody;
     public String token;
     public String userID;
+    RestClient restClient = new RestClient();
 
     @Test
     public void testMethod() {
@@ -35,18 +35,14 @@ public class CreateAccountTest {
     }
 
     public void createAccount() {
-        //configuram clientul
-        RequestSpecification requestSpecification = RestAssured.given();
-        requestSpecification.baseUri("https://demoqa.com/");
-        requestSpecification.contentType("application/json");
 
         //pregatim requestul
         PropertiesUtilitty propertiesUtilitty = new PropertiesUtilitty("Request/CreateAccountData");
         requestAccountBody = new RequestAccount(propertiesUtilitty.getAllData());
 
         //executam requestul
-        requestSpecification.body(requestAccountBody);
-        Response response = requestSpecification.post("Account/v1/User");
+        restClient.getRequestSpecification().body(requestAccountBody);
+        Response response = restClient.getRequestSpecification().post("Account/v1/User");
 
         //validam response
         Assert.assertTrue(response.getStatusLine().contains("201"));
@@ -61,14 +57,10 @@ public class CreateAccountTest {
     }
 
     public void generateToken() {
-        //configuram clientul
-        RequestSpecification requestSpecification = RestAssured.given();
-        requestSpecification.baseUri("https://demoqa.com/");
-        requestSpecification.contentType("application/json");
 
         //executam requestul
-        requestSpecification.body(requestAccountBody);
-        Response response = requestSpecification.post("Account/v1/GenerateToken");
+        restClient.getRequestSpecification().body(requestAccountBody);
+        Response response =  restClient.getRequestSpecification().post("Account/v1/GenerateToken");
 
         //validam response
         Assert.assertTrue(response.getStatusLine().contains("200"));
@@ -82,16 +74,12 @@ public class CreateAccountTest {
     }
 
     public void checkAccountPresence() {
-        //configuram clientul
-        RequestSpecification requestSpecification = RestAssured.given();
-        requestSpecification.baseUri("https://demoqa.com/");
-        requestSpecification.contentType("application/json");
 
         //ne autorizam pe baza la token
-        requestSpecification.header("Authorization", "Bearer "+token);
+        restClient.getRequestSpecification().header("Authorization", "Bearer "+token);
 
         //executam requestul
-        Response response = requestSpecification.get("Account/v1/User"+userID);
+        Response response = restClient.getRequestSpecification().get("Account/v1/User"+userID);
 
         System.out.println(response.getStatusLine());
 
@@ -107,20 +95,14 @@ public class CreateAccountTest {
 
     public void deleteUser() {
 
-        // configuram clientul
-        RequestSpecification requestSpecification = RestAssured.given();
-        requestSpecification.baseUri("https://demoqa.com");
-        requestSpecification.contentType("application/json");
-
         // ne autorizam pe baza la token
-        requestSpecification.header("Authorization","Bearer " + token);
+        restClient.getRequestSpecification().header("Authorization","Bearer " + token);
 
         // executam request-ul
-        Response response = requestSpecification.delete("/Account/v1/User/" + userID);
+        Response response = restClient.getRequestSpecification().delete("/Account/v1/User/" + userID);
         System.out.println(response.getStatusLine());
 
         Assert.assertTrue(response.getStatusLine().contains("204"));
         Assert.assertTrue(response.getStatusLine().contains("No Content"));
-
     }
 }
