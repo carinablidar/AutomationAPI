@@ -1,11 +1,10 @@
 package Tests;
 
-import io.restassured.response.Response;
+import Service.AccountService;
 import objectData.RequestAccount;
 import objectData.ResponseAccountSuccess;
 import objectData.response.ResponseTokenSuccess;
 import objectData.restClient.RestClient;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 import propertiesUtilitty.PropertiesUtilitty;
 
@@ -14,6 +13,7 @@ public class CreateAccountTest {
     public RequestAccount requestAccountBody;
     public String token;
     public String userID;
+    public AccountService accountService;
     RestClient restClient = new RestClient();
 
     @Test
@@ -30,7 +30,7 @@ public class CreateAccountTest {
         System.out.println("=== STEP 4: DELETE ACCOUNT ===");
         deleteUser();
 
-        System.out.println("===STEP 5: RECHECK ACCOUNT===");
+        System.out.println("=== STEP 5: RECHECK ACCOUNT ===");
         checkAccountPresence();
     }
 
@@ -40,69 +40,24 @@ public class CreateAccountTest {
         PropertiesUtilitty propertiesUtilitty = new PropertiesUtilitty("Request/CreateAccountData");
         requestAccountBody = new RequestAccount(propertiesUtilitty.getAllData());
 
-        //executam requestul
-        restClient.getRequestSpecification().body(requestAccountBody);
-        Response response = restClient.getRequestSpecification().post("Account/v1/User");
+        accountService = new AccountService();
 
-        //validam response
-        Assert.assertTrue(response.getStatusLine().contains("201"));
-        Assert.assertTrue(response.getStatusLine().contains("Created"));
-
-        ResponseAccountSuccess responseAccountSuccess = response.body().as(ResponseAccountSuccess.class);
+        ResponseAccountSuccess responseAccountSuccess = accountService.createAccount(requestAccountBody);
         userID = responseAccountSuccess.getUserId();
-
-        //responseBody.prettyPrint();
-        Assert.assertTrue(responseAccountSuccess.getUsername().equals(requestAccountBody.getUserName()));
-        System.out.println(responseAccountSuccess.getUserId());
     }
 
     public void generateToken() {
 
-        //executam requestul
-        restClient.getRequestSpecification().body(requestAccountBody);
-        Response response =  restClient.getRequestSpecification().post("Account/v1/GenerateToken");
-
-        //validam response
-        Assert.assertTrue(response.getStatusLine().contains("200"));
-        Assert.assertTrue(response.getStatusLine().contains("OK"));
-
-        ResponseTokenSuccess responseTokenSuccess = response.body().as(ResponseTokenSuccess.class);
+        ResponseTokenSuccess responseTokenSuccess = accountService.generateToken(requestAccountBody);
         token = responseTokenSuccess.getToken();
-
-        Assert.assertEquals(responseTokenSuccess.getStatus(), "Success");
-        Assert.assertEquals(responseTokenSuccess.getResult(), "User authorized successfully.");
     }
 
     public void checkAccountPresence() {
 
-        //ne autorizam pe baza la token
-        restClient.getRequestSpecification().header("Authorization", "Bearer "+token);
-
-        //executam requestul
-        Response response = restClient.getRequestSpecification().get("Account/v1/User"+userID);
-
-        System.out.println(response.getStatusLine());
-
-        if(response.getStatusLine().contains("200")) {
-            Assert.assertTrue(response.getStatusLine().contains("200"));
-            Assert.assertTrue(response.getStatusLine().contains("OK"));
-        }
-        else {
-            Assert.assertTrue(response.getStatusLine().contains("401"));
-            Assert.assertTrue(response.getStatusLine().contains("Unauthorized"));
-        }
+      accountService.checkAccountPresence(userID, token);
     }
 
     public void deleteUser() {
-
-        // ne autorizam pe baza la token
-        restClient.getRequestSpecification().header("Authorization","Bearer " + token);
-
-        // executam request-ul
-        Response response = restClient.getRequestSpecification().delete("/Account/v1/User/" + userID);
-        System.out.println(response.getStatusLine());
-
-        Assert.assertTrue(response.getStatusLine().contains("204"));
-        Assert.assertTrue(response.getStatusLine().contains("No Content"));
+        accountService.deleteAccount(userID, token);
     }
 }
